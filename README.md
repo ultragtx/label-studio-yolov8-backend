@@ -10,44 +10,40 @@ This project contains an ML backend for segmenting and detecting pills in Label 
 
 - **docker-compose.yml**: The docker-compose file for running the backend.
 
-- **model.py**: The Python code for the ML backend model for image segmentation (PolygonLabels).
-- **model_det.py**: The Python code for the ML backend model for image detection (RectangleLabels) (rename it to `model.py` to use).
+- **model.py**:  The Python code for the ML backend model for image detection (RectangleLabels).
 
 - **best.pt**: The pre-trained YOLOv8 model for pill classification.
-
-- **uwsgi.ini**: The uWSGI configuration file for running the backend.
-
-- **supervisord.conf**: The supervisord configuration file for running the backend processes.
 
 - **requirements.txt**: The list of Python dependencies for the backend.
 
 ## Getting Started
 
-1. Clone the Label Studio Machine Learning Backend git repository. From the command line, run the following:
+Refer to https://github.com/HumanSignal/label-studio-ml-backend/tree/master/label_studio_ml/examples/grounding_dino for additional information.
 
-   `git clone https://github.com/seblful/label-studio-yolov8-backend.git`
+1. Clone the Label Studio Machine Learning Backend git repository.
 
-2. Paste you Label Studio API key in `model.py`
+2. Paste you Label Studio IP and API key in `model.py`.
 
-3. To use this backend, you'll need to have Docker and docker-compose installed. Then, run the following command to start the backend:
+3. Update self.labels based on your model.
+
+4. To use this backend, you'll need to have Docker and docker-compose installed. Then, run the following command to start the backend:
 
    `docker-compose up`
 
 
-&emsp; &emsp;This will start the backend on localhost:9090.
+&emsp; &emsp;This will start the backend on localhost:11302.
 
 &emsp; &emsp;Check if it works:
 
-<pre>
-    $ curl http://localhost:9090/health
-    {"status":"UP"}
-</pre>
-
+```bash
+$ curl http://localhost:11302/health
+{"status":"UP"}
+```
 
 
 4. Connect running backend to Label Studio:
 
-   `label-studio start --init new_project --ml-backends http://localhost:9090`
+   `label-studio start --init new_project --ml-backends http://localhost:11302`
 
 &emsp; &emsp;Or write it manually in Settings - Machine - Add Model.
 

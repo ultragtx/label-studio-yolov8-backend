@@ -4,10 +4,9 @@ import requests
 import socket
 from PIL import Image
 from io import BytesIO
+import json
 
-import numpy as np
 from ultralytics import YOLO
-
 from label_studio_ml.model import LabelStudioMLBase
 from label_studio_ml.utils import get_single_tag_keys, get_local_path
 
@@ -17,22 +16,22 @@ from label_studio_ml.utils import get_single_tag_keys, get_local_path
 # print("Hostname: ", hostname)
 # print("IP Address: ", ip_address)
 
-LS_URL = "http://192.168.100.3:8080"
-LS_API_TOKEN = "201a66049e8438c587125d8163d2d60538f067d5"
+LS_URL = "http://192.168.10.216:11231"
+# LS_URL = "http://127.0.0.1:11231"
+LS_API_TOKEN = "9c8fc2201c19c28ffa0d6841264da5905940e0b7"
 
 
 # Initialize class inhereted from LabelStudioMLBase
 class YOLOv8Model(LabelStudioMLBase):
-    def __init__(self, **kwargs):
+    def __init__(self, project_id, **kwargs):
         # Call base class constructor
-        super(YOLOv8Model, self).__init__(**kwargs)
-
+        super(YOLOv8Model, self).__init__(project_id, **kwargs)
         # Initialize self variables
-        self.from_name, self.to_name, self.value, self.classes = get_single_tag_keys(
-            self.parsed_label_config, 'PolygonLabels', 'Image')
-        self.labels = ['capsules', 'tablets']
+        self.labels = ['Bracelets', 'Brooches', 'belt', 'earring', 'maangtika', 'necklace', 'nose ring', 'ring', 'tiara']
         # Load model
-        self.model = YOLO("best_seg.pt")
+        current_script_directory = os.path.dirname(__file__)
+        model_path = os.path.join(current_script_directory, "best_det.pt")
+        self.model = YOLO(model_path)
 
     # Function to predict
     def predict(self, tasks, **kwargs):
@@ -40,6 +39,14 @@ class YOLOv8Model(LabelStudioMLBase):
         Returns the list of predictions based on input list of tasks for 1 image
         """
         task = tasks[0]
+
+        print('predict')
+        print(json.dumps(task, indent=2) )
+        print(self)
+
+        self.from_name, self.to_name, self.value = self.get_first_tag_occurence('RectangleLabels', 'Image')
+
+        print(self.from_name, self.to_name, self.value)
 
         # Getting URL of the image
         image_url = task['data'][self.value]
@@ -53,6 +60,8 @@ class YOLOv8Model(LabelStudioMLBase):
         # Getting URL and loading image
         image = Image.open(BytesIO(requests.get(
             full_url, headers=header).content))
+        
+        print('got image')
         # Height and width of image
         original_width, original_height = image.size
 
@@ -66,31 +75,28 @@ class YOLOv8Model(LabelStudioMLBase):
 
         # Getting mask segments, boxes from model prediction
         for result in results:
-            for i, (box, segm) in enumerate(zip(result.boxes, result.masks.xy)):
-
-                # 2D array with poligon points
-                polygon_points = segm / \
-                    np.array([original_width, original_height]) * 100
-
-                polygon_points = polygon_points.tolist()
-
-                # Adding dict to prediction
-                predictions.append({
+            for i, prediction in enumerate(result.boxes):
+                xyxy = prediction.xyxy[0].tolist()
+                result = {
+                    "id": str(i),
                     "from_name": self.from_name,
                     "to_name": self.to_name,
-                    "id": str(i),
-                    "type": "polygonlabels",
-                    "score": box.conf.item(),
+                    "type": "rectanglelabels",
+                    "score": prediction.conf.item(),
                     "original_width": original_width,
                     "original_height": original_height,
                     "image_rotation": 0,
                     "value": {
-                        "points": polygon_points,
-                        "polygonlabels": [self.labels[int(box.cls.item())]]
-                    }})
-
-                # Calculating score
-                score += box.conf.item()
+                        "rotation": 0,
+                        "x": xyxy[0] / original_width * 100,
+                        "y": xyxy[1] / original_height * 100,
+                        "width": (xyxy[2] - xyxy[0]) / original_width * 100,
+                        "height": (xyxy[3] - xyxy[1]) / original_height * 100,
+                        "rectanglelabels": [self.labels[int(prediction.cls.item())]]
+                }}
+                print(result)
+                predictions.append(result)
+                score += prediction.conf.item()
 
         print(f"Prediction Score is {score:.3f}.")
 
@@ -98,7 +104,7 @@ class YOLOv8Model(LabelStudioMLBase):
         final_prediction = [{
             "result": predictions,
             "score": score / (i + 1),
-            "model_version": "v8s"
+            "model_version": "v8n"
         }]
 
         return final_prediction
