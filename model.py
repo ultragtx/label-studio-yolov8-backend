@@ -18,7 +18,7 @@ from label_studio_ml.utils import get_single_tag_keys, get_local_path
 
 LS_URL = "http://192.168.10.216:11231"
 # LS_URL = "http://127.0.0.1:11231"
-LS_API_TOKEN = "9c8fc2201c19c28ffa0d6841264da5905940e0b7"
+LS_API_TOKEN = "c5a6e12f1bc2458b899c061e83ab2feb3970db20"
 
 
 # Initialize class inhereted from LabelStudioMLBase
@@ -40,18 +40,17 @@ class YOLOv8Model(LabelStudioMLBase):
         """
         task = tasks[0]
 
-        print('predict')
-        print(json.dumps(task, indent=2) )
-        print(self)
+        # print('predict')
+        # print(json.dumps(task, indent=2) )
 
         self.from_name, self.to_name, self.value = self.get_first_tag_occurence('RectangleLabels', 'Image')
 
-        print(self.from_name, self.to_name, self.value)
+        # print(self.from_name, self.to_name, self.value)
 
         # Getting URL of the image
         image_url = task['data'][self.value]
         full_url = LS_URL + image_url
-        print("FULL URL: ", full_url)
+        # print("FULL URL: ", full_url)
 
         # Header to get request
         header = {
@@ -61,7 +60,6 @@ class YOLOv8Model(LabelStudioMLBase):
         image = Image.open(BytesIO(requests.get(
             full_url, headers=header).content))
         
-        print('got image')
         # Height and width of image
         original_width, original_height = image.size
 
